@@ -3,8 +3,9 @@
 
 # Configuration
 
-PORT=8022
-FILES="/sdcard/Download/free_hotspot"
+SSH_PORT=8022
+FILES="$HOME/.bypass"
+REPO="https://github.com/SeedOfYggdrasil/bypass_throttle.git"
 PUBLIC_KEY_FILE="authorized_keys"
 
 # Functions
@@ -25,6 +26,7 @@ initial_setup() {
     pkg update -y &>/dev/null
     pkg upgrade -y &>/dev/null
 
+    install_package "git"
     install_package "openssh"
     install_package "net-tools"
     install_package "termux-api"
@@ -34,6 +36,11 @@ initial_setup() {
     printf "Requesting storage access..."
     termux-setup-storage
     printf "\rRequesting storage access...DONE\n"
+
+    printf "Cloning repository..."
+    git clone $REPO &>/dev/null
+    mv bypass_throttle $APP_DIR
+    printf "\rCloning repository...DONE\n"
 
     SSH_DIR="$HOME/.ssh"
     printf "Performing initial setup..."
@@ -46,17 +53,17 @@ initial_setup() {
     local source_auth_keys="$FILES/authorized_keys"
     local dest_auth_keys="$SSH_DIR/authorized_keys"
 
-    cp "$source_auth_keys" "$dest_auth_keys"
+    cat "$source_auth_keys" | tee -a "$dest_auth_keys" &>/dev/null
     chmod 600 "$dest_auth_keys"
 
     local sshd_config_file="$PREFIX/etc/ssh/sshd_config"
 
     if ! grep -q "^PubkeyAuthentication yes" "$sshd_config_file"; then
-        if grep -q "^#PubkeyAuthentication yes" "$sshd_config_file"; then
-            sed -i 's/^#PubkeyAuthentication yes/PubkeyAuthentication yes/' "$sshd_config_file"
-        else
-            echo "PubkeyAuthentication yes" >> "$sshd_config_file"
-        fi
+      if grep -q "^#PubkeyAuthentication yes" "$sshd_config_file"; then
+        sed -i 's/^#PubkeyAuthentication yes/PubkeyAuthentication yes/' "$sshd_config_file"
+      else
+        echo "PubkeyAuthentication yes" >> "$sshd_config_file"
+      fi
     fi
 
     if [ -f "$HOME/.ssh/authorized_keys" ] && [ -s "$HOME/.ssh/authorized_keys" ]; then
@@ -100,6 +107,7 @@ server_ip() {
   else
       IP="$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1'")
   fi
+
   echo "$IP"
 }
 
@@ -111,13 +119,16 @@ display_info() {
     echo "  SERVER INFO"
     echo "    IP:       $SERVER_IP"
     echo "    Port:     $SSH_PORT"
+    echo "    User:     $(whoami)"
     echo ""
     echo "   Notes:"
     echo "      - Make sure your phone's hotspot is turned ON"
+    echo "      - Then use the client script to connect a device."
     echo "      - To keep running, open another Termux session and run 'termux-wake-lock'"
     echo "      - To deactivate the server, run 'pkill sshd'"
-    echo "      - I love you!"
+    echo -e "     \033[91m- I love you!\033[0m"
     echo ""
+    echo "Press Ctrl=C to exit (server will continue running in background)."
 }
 
 bypass_throttle() {
@@ -134,3 +145,4 @@ bypass_throttle() {
     wait
     exit 0
 }
+bypass_throttle
