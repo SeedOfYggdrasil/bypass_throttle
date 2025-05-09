@@ -80,10 +80,10 @@ initial_setup() {
     local BASHRC="$HOME/.bashrc"
     cp "$BASHRC" "$BACKUP_DIR/bashrc.backup"
 
-    if ! cat "$BASHRC" | grep "alias bypass" &>/dev/null; then
+    if ! cat "$BASHRC" | grep "alias bypass=" &>/dev/null; then
         echo "" | tee -a "$BASHRC"
         echo -e "\# --Bypass Hotspot Throttle-- " | tee -a "$BASHRC"
-        echo "alias bypass='bash -c $(curl -fsSL https://raw.githubusercontent.com/SeedOfYggdrasil/bypass_throttle/main/server.sh)'" | tee -a "$BASHRC"
+        echo "alias bypass='bash -c $(curl -fsSL https://raw.githubusercontent.com/SeedOfYggdrasil/bypass_throttle/refs/heads/main/server.sh)'" | tee -a "$BASHRC
         echo "" | tee -a "$BASHRC"
     fi
 
