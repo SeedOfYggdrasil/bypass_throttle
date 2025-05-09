@@ -1,14 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env bash
-
-
-# Configuration
-
-SSH_PORT=8022
-FILES="$HOME/.bypass"
-REPO="https://github.com/SeedOfYggdrasil/bypass_throttle.git"
-PUBLIC_KEY_FILE="authorized_keys"
-
-# Functions
+#
+# bypass_throttle_server.sh
+# ver. 1.0
+#
+#----START----
 
 install_package() {
     local package_name="$1"
@@ -37,11 +32,6 @@ initial_setup() {
     termux-setup-storage
     printf "\rRequesting storage access...DONE\n"
 
-    printf "Cloning repository..."
-    git clone $REPO &>/dev/null
-    mv bypass_throttle $APP_DIR
-    printf "\rCloning repository...DONE\n"
-
     SSH_DIR="$HOME/.ssh"
     printf "Performing initial setup..."
 
@@ -50,10 +40,9 @@ initial_setup() {
         chmod 700 "$SSH_DIR"
     fi
 
-    local source_auth_keys="$FILES/authorized_keys"
     local dest_auth_keys="$SSH_DIR/authorized_keys"
 
-    cat "$source_auth_keys" | tee -a "$dest_auth_keys" &>/dev/null
+    echo "$PUBLIC_KEY" | tee "$dest_auth_keys" &>/dev/null
     chmod 600 "$dest_auth_keys"
 
     local sshd_config_file="$PREFIX/etc/ssh/sshd_config"
@@ -132,6 +121,10 @@ display_info() {
 }
 
 bypass_throttle() {
+    SSH_PORT=8022
+    FILES="$HOME/.bypass"
+    REPO="https://github.com/SeedOfYggdrasil/bypass_throttle.git"
+PUBLIC_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEygw1nByVqsEF+T6sbAsSBJgEk1itWy6WvNJvXlRJq8"
     APP_DIR="$HOME/.bypass"
     SETUP_FILE="$APP_DIR/setup_complete"
 

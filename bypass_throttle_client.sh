@@ -2,7 +2,6 @@
 
 # Configuration
 
-
 install_package() {
     local pkg=$1
     printf "    Installing $pkg..."
@@ -64,8 +63,8 @@ cleanup() {
     sudo systemctl stop hostapd 2>/dev/null
     sudo systemctl stop dnsmasq 2>/dev/null
 
-    sudo systemctl stop systemd-resolved &>/dev/null
-    sudo systemctl disable systemd-resolved &>/dev/null
+    sudo systemctl start systemd-resolved &>/dev/null
+    sudo systemctl enable systemd-resolved &>/dev/null
     
     sudo ip addr flush dev "$DOWNSTREAM_IFACE" 2>/dev/null
     sudo ip link set dev "$DOWNSTREAM_IFACE" down 2>/dev/null
@@ -149,7 +148,7 @@ configure_downstream() {
     # DNSMASQ
     sudo bash -c "cat > /etc/dnsmasq.conf" <<EOF
 interface=$DOWNSTREAM_IFACE
-dhcp-range=${IP_PREFIX}.50,${IP_PREFIX}.150,12h/
+dhcp-range=${IP_PREFIX}.50,${IP_PREFIX}.150,12h
 dhcp-option=3,${IP_PREFIX}.1
 dhcp-option=6,${IP_PREFIX}.1
 dhcp-option=6,1.1.1.1,1.0.0.1
