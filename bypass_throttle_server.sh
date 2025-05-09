@@ -5,6 +5,11 @@
 #
 #----START----
 
+SSH_PORT=8022
+PUBLIC_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEygw1nByVqsEF+T6sbAsSBJgEk1itWy6WvNJvXlRJq8"APP_DIR="$HOME/.bypass"
+SETUP_FILE="$APP_DIR/setup_complete"
+
+
 install_package() {
     local package_name="$1"
     printf "    Installing $package_name..."
@@ -21,16 +26,11 @@ initial_setup() {
     pkg update -y &>/dev/null
     pkg upgrade -y &>/dev/null
 
-    install_package "git"
     install_package "openssh"
     install_package "net-tools"
     install_package "termux-api"
 
     printf "\rInstalling required packages...DONE\n"
-
-    printf "Requesting storage access..."
-    termux-setup-storage
-    printf "\rRequesting storage access...DONE\n"
 
     SSH_DIR="$HOME/.ssh"
     printf "Performing initial setup..."
@@ -64,17 +64,14 @@ initial_setup() {
         sed -i 's/^#PasswordAuthentication no/PasswordAuthentication no/' "$sshd_config_file"
     fi
 
-    APP_DIR="$HOME/.bypass"
-    SETUP_FILE="$APP_DIR/setup_complete"
-
     [ ! -d "$APP_DIR" ] && mkdir -p "$APP_DIR"
     [ ! -f "$SETUP_FILE" ] && touch "$SETUP_FILE"
 
     printf "\rPerforming initial setup...DONE\n"
-    echo ""
 }
 
 start_server() {
+    echo ""
     printf "Starting..."
     if pgrep -f "sshd -D" > /dev/null || pgrep -f "$PREFIX/bin/sshd" > /dev/null; then
         pkill sshd
@@ -121,12 +118,6 @@ display_info() {
 }
 
 bypass_throttle() {
-    SSH_PORT=8022
-    FILES="$HOME/.bypass"
-    REPO="https://github.com/SeedOfYggdrasil/bypass_throttle.git"
-PUBLIC_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEygw1nByVqsEF+T6sbAsSBJgEk1itWy6WvNJvXlRJq8"
-    APP_DIR="$HOME/.bypass"
-    SETUP_FILE="$APP_DIR/setup_complete"
 
     if [ ! -f "$SETUP_FILE" ]; then
         initial_setup
