@@ -6,7 +6,11 @@
 #----START----
 
 SSH_PORT=8022
+<<<<<<< HEAD
 PUBKEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEygw1nByVqsEF+T6sbAsSBJgEk1itWy6WvNJvXlRJq8"
+=======
+PUBLIC_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEygw1nByVqsEF+T6sbAsSBJgEk1itWy6WvNJvXlRJq8"
+>>>>>>> refs/remotes/origin/main
 APP_DIR="$HOME/.bypass"
 SETUP_FILE="$APP_DIR/setup_complete"
 
