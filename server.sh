@@ -7,7 +7,6 @@
 
 SSH_PORT=8022
 PUBKEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEygw1nByVqsEF+T6sbAsSBJgEk1itWy6WvNJvXlRJq8"
-
 APP_DIR="$HOME/.bypass"
 SETUP_FILE="$APP_DIR/setup_complete"
 
@@ -25,7 +24,6 @@ initial_setup() {
     printf "Installing required packages..."
 
     pkg update -y &> /dev/null
-    pkg upgrade -y &> /dev/null
 
     install_package "openssh"
     install_package "net-tools"
@@ -35,25 +33,39 @@ initial_setup() {
 
     SSH_DIR="$HOME/.ssh"
     printf "Performing initial setup..."
+    
+    [ ! -d "$APP_DIR" ] && mkdir -p "$APP_DIR"
+    local BACKUP_DIR="$APP_DIR/.backups"
+    [ ! -d "$BACKUP_DIR" ] && mkdir -p "$BACKUP_DIR"
 
     if [ ! -d "$SSH_DIR" ]; then
         mkdir -p "$SSH_DIR"
         chmod 700 "$SSH_DIR"
     fi
 
-    local dest_auth_keys="$SSH_DIR/authorized_keys"
+    local auth_keys="$SSH_DIR/authorized_keys"
+    [ -f "$auth_keys" ] && cp "$auth_keys" "$BACKUP_DIR/authorized_keys.backup"
 
-    echo "$PUBKEY" | tee "$dest_auth_keys" &> /dev/null
-    chmod 600 "$dest_auth_keys"
+    local auth_a=$(cat "$auth_keys")
+    local auth_b=$(cat "$auth_keys" | grep "$PUBKEY")
+
+    if [ -n "$auth_a" ] && [ ! -n "$auth_b" ] ; then 
+        echo "$PUBKEY" | tee -a "$auth_keys" &> /dev/null
+    elif [ ! -f "$auth_keys" ] || [ ! -n "$auth_a" ]; then
+        echo "$PUBKEY" | tee "$auth_keys" &>/dev/null
+    fi
+
+    chmod 600 "$auth_keys"
 
     local sshd_config_file="$PREFIX/etc/ssh/sshd_config"
+    cp "$sshd_config_file" "$BACKUP_DIR/sshd_config.backup"
 
     if ! grep -q "^PubkeyAuthentication yes" "$sshd_config_file"; then
-        if grep -q "^#PubkeyAuthentication yes" "$sshd_config_file"; then
-            sed -i 's/^#PubkeyAuthentication yes/PubkeyAuthentication yes/' "$sshd_config_file"
-        else
+       if grep -q "^#PubkeyAuthentication yes" "$sshd_config_file"; then
+         sed -i 's/^#PubkeyAuthentication yes/PubkeyAuthentication yes/' "$sshd_config_file"
+       else
             echo "PubkeyAuthentication yes" >> "$sshd_config_file"
-        fi
+       fi
     fi
 
     if [ -f "$HOME/.ssh/authorized_keys" ] && [ -s "$HOME/.ssh/authorized_keys" ]; then
@@ -65,9 +77,17 @@ initial_setup() {
         sed -i 's/^#PasswordAuthentication no/PasswordAuthentication no/' "$sshd_config_file"
     fi
 
-    [ ! -d "$APP_DIR" ] && mkdir -p "$APP_DIR"
-    [ ! -f "$SETUP_FILE" ] && touch "$SETUP_FILE"
+    local BASHRC="$HOME/.bashrc"
+    cp "$BASHRC" "$BACKUP_DIR/bashrc.backup"
 
+    if ! cat "$BASHRC" | grep "alias bypass" &>/dev/null; then
+        echo "" | tee -a "$BASHRC"
+        echo -e "\# --Bypass Hotspot Throttle-- " | tee -a "$BASHRC"
+        echo "alias bypass='bash -c $(curl -fsSL https://raw.githubusercontent.com/SeedOfYggdrasil/bypass_throttle/main/server.sh)'" | tee -a "$BASHRC"
+        echo "" | tee -a "$BASHRC"
+    fi
+
+    [ ! -f "$SETUP_FILE" ] && touch "$SETUP_FILE"
     printf "\rPerforming initial setup...DONE\n"
 }
 
@@ -82,7 +102,7 @@ start_server() {
         printf "\rStarting...DONE\n"
     else
         printf "\rStarting...FAIL\n"
-        exit 1 &> /dev/null
+        exit 1
     fi
 }
 
@@ -102,8 +122,7 @@ server_ip() {
 
 display_info() {
     SERVER_IP=$(server_ip)
-    echo ""
-    echo "BYPASSING HOTSPOT THROTTLE..."
+
     echo ""
     echo "  SERVER INFO"
     echo "    IP:       $SERVER_IP"
@@ -121,7 +140,6 @@ display_info() {
 }
 
 bypass_throttle() {
-
     if [ ! -f "$SETUP_FILE" ]; then
         initial_setup
     fi
