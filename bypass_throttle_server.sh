@@ -6,25 +6,25 @@
 #----START----
 
 SSH_PORT=8022
-PUBLIC_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEygw1nByVqsEF+T6sbAsSBJgEk1itWy6WvNJvXlRJq8"APP_DIR="$HOME/.bypass"
+PUBKEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEygw1nByVqsEF+T6sbAsSBJgEk1itWy6WvNJvXlRJq8"
+APP_DIR="$HOME/.bypass"
 SETUP_FILE="$APP_DIR/setup_complete"
-
 
 install_package() {
     local package_name="$1"
-    printf "    Installing $package_name..."
-    if pkg install -y "$package_name" &>/dev/null; then
-        printf "\r  Installing $package_name...DONE\n"
+    printf ' Installing %s...' "$package_name..."
+    if pkg install -y "$package_name" &> /dev/null; then
+        printf '\r  Installing %s...DONE\n' "$package_name"
     else
-        printf "\r  Installing $package_name...FAIL\n"
+        printf '\r  Installing %s...FAIL\n' "$package_name"
     fi
 }
 
 initial_setup() {
     printf "Installing required packages..."
 
-    pkg update -y &>/dev/null
-    pkg upgrade -y &>/dev/null
+    pkg update -y &> /dev/null
+    pkg upgrade -y &> /dev/null
 
     install_package "openssh"
     install_package "net-tools"
@@ -42,24 +42,24 @@ initial_setup() {
 
     local dest_auth_keys="$SSH_DIR/authorized_keys"
 
-    echo "$PUBLIC_KEY" | tee "$dest_auth_keys" &>/dev/null
+    echo "$PUBKEY" | tee "$dest_auth_keys" &> /dev/null
     chmod 600 "$dest_auth_keys"
 
     local sshd_config_file="$PREFIX/etc/ssh/sshd_config"
 
     if ! grep -q "^PubkeyAuthentication yes" "$sshd_config_file"; then
-      if grep -q "^#PubkeyAuthentication yes" "$sshd_config_file"; then
-        sed -i 's/^#PubkeyAuthentication yes/PubkeyAuthentication yes/' "$sshd_config_file"
-      else
-        echo "PubkeyAuthentication yes" >> "$sshd_config_file"
-      fi
+        if grep -q "^#PubkeyAuthentication yes" "$sshd_config_file"; then
+            sed -i 's/^#PubkeyAuthentication yes/PubkeyAuthentication yes/' "$sshd_config_file"
+        else
+            echo "PubkeyAuthentication yes" >> "$sshd_config_file"
+        fi
     fi
 
     if [ -f "$HOME/.ssh/authorized_keys" ] && [ -s "$HOME/.ssh/authorized_keys" ]; then
         if grep -q "^PasswordAuthentication yes" "$sshd_config_file"; then
             sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' "$sshd_config_file"
         elif ! grep -q "^PasswordAuthentication no" "$sshd_config_file"; then
-             echo "PasswordAuthentication no" >> "$sshd_config_file"
+            echo "PasswordAuthentication no" >> "$sshd_config_file"
         fi
         sed -i 's/^#PasswordAuthentication no/PasswordAuthentication no/' "$sshd_config_file"
     fi
@@ -81,20 +81,22 @@ start_server() {
         printf "\rStarting...DONE\n"
     else
         printf "\rStarting...FAIL\n"
-        exit 1 &>/dev/null
+        exit 1 &> /dev/null
     fi
 }
 
 server_ip() {
-  if [ -z "$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1')" ]; then
-    if command -v ifconfig &> /dev/null; then
-    IP="$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')"
+    local IP=""
+    IP_a="$(ip -4 addr show 2> /dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1' | head -n 1)"
+    if [ -n "$IP_a" ]; then
+        IP="$IP_a"
+    elif command -v ifconfig &> /dev/null; then
+        IP_b="$(ifconfig 2> /dev/null | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1)"
+        if [ -n "$IP_b" ]; then
+            IP="$IP_b"
+        fi
     fi
-  else
-      IP="$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1'")
-  fi
-
-  echo "$IP"
+    echo "$IP"
 }
 
 display_info() {
