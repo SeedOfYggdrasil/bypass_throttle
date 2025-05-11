@@ -1,4 +1,4 @@
-#!#/bin/bash
+#!/bin/bash
 #
 # bypass_throttle_server.sh
 # ver. 1.0
