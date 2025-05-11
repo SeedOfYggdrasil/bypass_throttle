@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env bash
+#!#/bin/bash
 #
 # bypass_throttle_server.sh
 # ver. 1.0
