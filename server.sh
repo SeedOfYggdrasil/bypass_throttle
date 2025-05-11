@@ -130,7 +130,7 @@ display_info() {
     echo "    User:     $(whoami)"
     echo ""
     echo "   Notes:"
-    echo "      - Make sure your phone's hotspot is turned ON"
+    echo "      - Turn your hotspot ON as usual."
     echo "      - Then use the client script to connect a device."
     echo "      - To keep running, open another Termux session and run 'termux-wake-lock'"
     echo "      - To deactivate the server, run 'pkill sshd'"
